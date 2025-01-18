@@ -1,8 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { BufferGeometry, Float32BufferAttribute } from "three";
+import { useFrame } from "@react-three/fiber";
 import Actor from "./Actor";
 
 function Scene() {
+    const groupRef = useRef();
     const R = 10; // Major radius
     const r = 1.75; // Minor radius
     const vSpan = 3; // Reduce for finer vertical resolution
@@ -12,8 +14,8 @@ function Scene() {
     const { locationList, edges } = useMemo(() => {
         const points = [];
         const edgesSet = new Set(); // Use a set to avoid duplicate edges
-        const uSteps = Math.ceil(360 / uSpan); // Total horizontal divisions
-        const vSteps = Math.ceil((360 * 1.5) / vSpan); // Total vertical divisions
+        const uSteps = Math.ceil(360 / uSpan); // Total horizontal face divisions
+        const vSteps = Math.ceil((360 * 1.5) / vSpan); // Total vertical face divisions
 
         for (let v = 0; v <= 360 * 1.5; v += vSpan) {
             const z = (v / (360 * 1.5)) * 20 - 10;
@@ -45,12 +47,12 @@ function Scene() {
                     [c, d],
                 ].forEach(([start, end]) => {
                     const edge = [Math.min(start, end), Math.max(start, end)];
-                    edgesSet.add(edge.toString()); // Store as strings
+                    edgesSet.add(edge.toString());
                 });
             }
         }
 
-        const edges = Array.from(edgesSet).map((e) => e.split(",").map(Number)); // Convert back to pairs of indices
+        const edges = Array.from(edgesSet).map((e) => e.split(",").map(Number));
         return { locationList: points, edges };
     }, [R, r, vSpan, uSpan]);
 
@@ -63,28 +65,35 @@ function Scene() {
         return geom;
     }, [locationList]);
 
+    useFrame(({ clock }) => {
+        const elapsedTime = clock.getElapsedTime();
+        if (groupRef.current) {
+            groupRef.current.rotation.z = elapsedTime * 0.1;
+        }
+    });
+
     return (
-        <group>
+        <group ref={groupRef}>
             <ambientLight intensity={0.5} />
             <pointLight position={[10, 10, 10]} />
 
             {/* Mesh */}
-            <mesh geometry={geometry}>
+            {/* <mesh geometry={geometry}>
                 <meshStandardMaterial
                     color="white"
-                    wireframe={true} // Visible wireframe
+                    wireframe={true}
                     opacity={0.0}
                     transparent={true}
                 />
-            </mesh>
+            </mesh> */}
 
             {/* Actors */}
-            {Array.from({ length: 600 }).map((_, i) => (
+            {Array.from({ length: 500 }).map((_, i) => (
                 <Actor
                     key={i}
                     locationList={locationList}
                     edges={edges}
-                    speed={0.15}
+                    speed={0.1}
                 />
             ))}
         </group>

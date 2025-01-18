@@ -2,21 +2,36 @@ import React, { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
+function interpolateColors(colors, t) {
+    const numColors = colors.length;
+    const scaledT = t * (numColors - 1);
+    const index = Math.floor(scaledT);
+    const alpha = scaledT - index;
+
+    const color1 = new THREE.Color(colors[index]);
+    const color2 = new THREE.Color(colors[(index + 1) % numColors]);
+
+    return color1.lerp(color2, alpha).getStyle();
+}
+
 function Actor({ locationList, edges, speed = 0.05 }) {
-    const trailRef = useRef(); // Trail reference
+    const trailRef = useRef();
 
     const MAX_TRAIL_LENGTH = 12;
+
+    const gradientColors = ["#d549dd", "#03e5f2"];
 
     // State for actor position and trail log
     const [state, setState] = useState(() => {
         const startEdgeIndex = Math.floor(Math.random() * edges.length); // Start on a random edge
         const [selectIndex, nextIndex] = edges[startEdgeIndex];
+        const randomT = Math.random(); // Generate a random value for the gradient
         return {
             selectIndex,
             nextIndex,
             progress: 0,
             log: Array(MAX_TRAIL_LENGTH).fill(new THREE.Vector3(0, 0, 0)),
-            color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+            color: interpolateColors(gradientColors, randomT),
         };
     });
 
@@ -28,7 +43,6 @@ function Actor({ locationList, edges, speed = 0.05 }) {
 
         if (!currentPoint || !nextPoint) return;
 
-        // Interpolate along the edge
         const start = new THREE.Vector3(...currentPoint);
         const end = new THREE.Vector3(...nextPoint);
         const position = start.clone().lerp(end, progress);
@@ -45,13 +59,11 @@ function Actor({ locationList, edges, speed = 0.05 }) {
             );
 
             if (!trailGeometry.attributes.position) {
-                // Initialize the position attribute if not already set
                 trailGeometry.setAttribute(
                     "position",
                     new THREE.BufferAttribute(positions, 3)
                 );
             } else {
-                // Update the existing position attribute
                 trailGeometry.attributes.position.array = positions;
                 trailGeometry.attributes.position.needsUpdate = true;
             }
@@ -59,9 +71,8 @@ function Actor({ locationList, edges, speed = 0.05 }) {
 
         // Handle progression
         if (progress >= 1) {
-            // Choose a random neighboring edge
             const availableEdges = edges.filter(
-                ([start, end]) => start === nextIndex || end === nextIndex // Edges connected to the current point
+                ([start, end]) => start === nextIndex || end === nextIndex
             );
 
             if (availableEdges.length > 0) {
@@ -70,7 +81,7 @@ function Actor({ locationList, edges, speed = 0.05 }) {
                         Math.floor(Math.random() * availableEdges.length)
                     ];
 
-                const newNextIndex = newStart === nextIndex ? newEnd : newStart; // Pick the other point on the edge
+                const newNextIndex = newStart === nextIndex ? newEnd : newStart;
 
                 setState({
                     selectIndex: nextIndex,
@@ -83,7 +94,7 @@ function Actor({ locationList, edges, speed = 0.05 }) {
         } else {
             setState((prev) => ({
                 ...prev,
-                progress: prev.progress + speed, // Use the speed variable
+                progress: prev.progress + speed,
             }));
         }
     });
