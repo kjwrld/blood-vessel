@@ -4,6 +4,7 @@ import * as THREE from 'three';
 
 function Actor({ locationList }) {
   const ref = useRef();
+  const trailRef = useRef();
 
   // Initialize state
   const [state, setState] = useState(() => {
@@ -12,17 +13,24 @@ function Actor({ locationList }) {
       selectIndex,
       nextIndex: selectIndex,
       progress: 0, // Interpolation progress between 0 and 1
+      log: [], // Trail history
+      color: `hsl(${Math.random() * 360}, 100%, 50%)`, // Random color
     };
   });
 
   useFrame(() => {
-    const { selectIndex, nextIndex, progress } = state;
+    const { selectIndex, nextIndex, progress, log, color } = state;
 
     // Interpolate position
     const start = new THREE.Vector3(...locationList[selectIndex]);
     const end = new THREE.Vector3(...locationList[nextIndex]);
     const position = start.lerp(end, progress);
     ref.current.position.copy(position);
+
+    // Update the trail
+    const newLog = [...log, position.clone()];
+    if (newLog.length > 12) newLog.shift(); // Keep the trail limited to 12 points
+    trailRef.current.geometry.setFromPoints(newLog);
 
     // Update progress and switch to next point if progress is complete
     if (progress >= 1) {
@@ -31,6 +39,8 @@ function Actor({ locationList }) {
         selectIndex: nextIndex,
         nextIndex: newNextIndex,
         progress: 0,
+        log: newLog,
+        color,
       });
     } else {
       setState((prevState) => ({
@@ -41,10 +51,19 @@ function Actor({ locationList }) {
   });
 
   return (
-    <mesh ref={ref}>
-      <sphereGeometry args={[0.2, 16, 16]} />
-      <meshStandardMaterial color="hsl(200, 100%, 50%)" />
-    </mesh>
+    <group>
+      {/* Actor Sphere */}
+      <mesh ref={ref}>
+        <sphereGeometry args={[0.2, 16, 16]} />
+        <meshStandardMaterial color={state.color} />
+      </mesh>
+
+      {/* Trail */}
+      <line ref={trailRef}>
+        <bufferGeometry />
+        <lineBasicMaterial color={state.color} />
+      </line>
+    </group>
   );
 }
 
