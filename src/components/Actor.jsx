@@ -3,10 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 function Actor({ locationList, nextIndexList, destinationList }) {
-    const ref = useRef();
     const trailRef = useRef();
-
-    const MAX_TRAIL_LENGTH = 36;
+    const MAX_TRAIL_LENGTH = 12;
 
     const [state, setState] = useState(() => {
         const selectIndex = Math.floor(Math.random() * locationList.length);
@@ -14,23 +12,23 @@ function Actor({ locationList, nextIndexList, destinationList }) {
             selectIndex,
             nextIndex: selectIndex,
             progress: 0,
-            log: Array(MAX_TRAIL_LENGTH).fill(new THREE.Vector3(0, 0, 0)), // Preallocate trail
-            color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+            log: Array(MAX_TRAIL_LENGTH).fill(
+                new THREE.Vector3(...locationList[selectIndex])
+            ),
         };
     });
 
     useFrame(() => {
-        const { selectIndex, nextIndex, progress, log, color } = state;
+        const { selectIndex, nextIndex, progress, log } = state;
 
         // Interpolate position
         const start = new THREE.Vector3(...locationList[selectIndex]);
         const end = new THREE.Vector3(...locationList[nextIndex]);
         const position = start.lerp(end, progress);
-        ref.current.position.copy(position);
 
         // Update trail log
-        log.push(position.clone()); // Add new position
-        log.shift(); // Remove the oldest position
+        log.push(position.clone());
+        log.shift();
 
         // Update trail geometry
         if (trailRef.current) {
@@ -53,6 +51,7 @@ function Actor({ locationList, nextIndexList, destinationList }) {
                         Math.random() * nextIndexList[selectIndex].length
                     )
                 ];
+
             while (destinationList.includes(newNextIndex) && retries-- > 0) {
                 newNextIndex =
                     nextIndexList[selectIndex][
@@ -62,45 +61,36 @@ function Actor({ locationList, nextIndexList, destinationList }) {
                     ];
             }
 
-            if (retries > 0) destinationList.push(newNextIndex);
+            if (retries > 0) {
+                destinationList.push(newNextIndex);
+            }
 
             setState({
                 selectIndex: nextIndex,
                 nextIndex: newNextIndex,
                 progress: 0,
-                log: [...log], // Ensure trail persists
-                color,
+                log: [...log],
             });
         } else {
             setState((prevState) => ({
                 ...prevState,
-                progress: prevState.progress + 0.01,
+                progress: prevState.progress + 0.02,
             }));
         }
     });
 
     return (
-        <group>
-            {/* Actor */}
-            <mesh ref={ref}>
-                <sphereGeometry args={[0.2, 16, 16]} />
-                <meshStandardMaterial color={state.color} />
-            </mesh>
-
-            {/* Trail */}
-            <lineSegments>
-                <bufferGeometry ref={trailRef}>
-                    {/* Preallocate buffer for the trail */}
-                    <bufferAttribute
-                        attach="attributes-position"
-                        array={new Float32Array(MAX_TRAIL_LENGTH * 3)}
-                        count={MAX_TRAIL_LENGTH}
-                        itemSize={3}
-                    />
-                </bufferGeometry>
-                <lineBasicMaterial color={state.color} />
-            </lineSegments>
-        </group>
+        <lineSegments>
+            <bufferGeometry ref={trailRef}>
+                <bufferAttribute
+                    attach="attributes-position"
+                    array={new Float32Array(MAX_TRAIL_LENGTH * 3)}
+                    count={MAX_TRAIL_LENGTH}
+                    itemSize={3}
+                />
+            </bufferGeometry>
+            <lineBasicMaterial color="blue" />
+        </lineSegments>
     );
 }
 
