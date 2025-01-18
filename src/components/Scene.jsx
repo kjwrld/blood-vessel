@@ -1,19 +1,22 @@
-import React, { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-import { Line } from "@react-three/drei";
+import React, { useMemo } from "react";
+import { BufferGeometry, Float32BufferAttribute } from "three";
 import Actor from "./Actor";
 
 function Scene() {
-    const R = 4; // Major radius
-    const r = 1; // Minor radius
-    const vSpan = 15; // Vertical span
-    const uSpan = 30; // Horizontal span
+    const R = 10; // Major radius
+    const r = 1.75; // Minor radius
+    const vSpan = 3; // Reduce for finer vertical resolution
+    const uSpan = 15; // Reduce for finer horizontal resolution
 
-    // Generate location points
-    const locationList = useMemo(() => {
+    // Generate location points and edges for the mesh
+    const { locationList, edges } = useMemo(() => {
         const points = [];
-        for (let v = 0; v <= 360 * 2; v += vSpan) {
-            const z = (v / (360 * 2)) * 20 - 10; // Adjust z-axis range
+        const edgesSet = new Set(); // Use a set to avoid duplicate edges
+        const uSteps = Math.ceil(360 / uSpan); // Total horizontal divisions
+        const vSteps = Math.ceil((360 * 1.5) / vSpan); // Total vertical divisions
+
+        for (let v = 0; v <= 360 * 1.5; v += vSpan) {
+            const z = (v / (360 * 1.5)) * 20 - 10;
             for (let u = 0; u < 360; u += uSpan) {
                 const x =
                     (R + r * Math.cos((u * Math.PI) / 180)) *
@@ -25,42 +28,63 @@ function Scene() {
                 points.push([x, y, z + zOffset]);
             }
         }
-        return points;
+
+        // Generate edges from the faces
+        for (let v = 0; v < vSteps; v++) {
+            for (let u = 0; u < uSteps; u++) {
+                const a = v * uSteps + u;
+                const b = v * uSteps + ((u + 1) % uSteps); // Wrap horizontally
+                const c = (v + 1) * uSteps + u;
+                const d = (v + 1) * uSteps + ((u + 1) % uSteps); // Wrap horizontally
+
+                // Add edges as sorted pairs to avoid duplicates
+                [
+                    [a, b],
+                    [a, c],
+                    [b, d],
+                    [c, d],
+                ].forEach(([start, end]) => {
+                    const edge = [Math.min(start, end), Math.max(start, end)];
+                    edgesSet.add(edge.toString()); // Store as strings
+                });
+            }
+        }
+
+        const edges = Array.from(edgesSet).map((e) => e.split(",").map(Number)); // Convert back to pairs of indices
+        return { locationList: points, edges };
     }, [R, r, vSpan, uSpan]);
 
-    // Generate neighbors
-    const nextIndexList = useMemo(() => {
-        return locationList.map((point, i) => {
-            return locationList
-                .map((other, j) => ({
-                    distance: Math.hypot(
-                        ...point.map((p, idx) => p - other[idx])
-                    ),
-                    index: j,
-                }))
-                .filter((item) => item.index !== i && item.distance < 2.5) // Adjust threshold for adjacency
-                .map((item) => item.index);
-        });
+    const geometry = useMemo(() => {
+        const geom = new BufferGeometry();
+        geom.setAttribute(
+            "position",
+            new Float32BufferAttribute(locationList.flat(), 3)
+        );
+        return geom;
     }, [locationList]);
-
-    const destinationList = useRef([]);
 
     return (
         <group>
-            {/* Lighting */}
             <ambientLight intensity={0.5} />
             <pointLight position={[10, 10, 10]} />
 
-            {/* Parametric Shape */}
-            <Line points={locationList} color="black" lineWidth={1} />
+            {/* Mesh */}
+            <mesh geometry={geometry}>
+                <meshStandardMaterial
+                    color="white"
+                    wireframe={true} // Visible wireframe
+                    opacity={0.0}
+                    transparent={true}
+                />
+            </mesh>
 
             {/* Actors */}
-            {Array.from({ length: 300 }).map((_, i) => (
+            {Array.from({ length: 600 }).map((_, i) => (
                 <Actor
                     key={i}
                     locationList={locationList}
-                    nextIndexList={nextIndexList}
-                    destinationList={destinationList.current}
+                    edges={edges}
+                    speed={0.15}
                 />
             ))}
         </group>
