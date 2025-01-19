@@ -8,8 +8,7 @@ function Scene() {
     const groupRef = useRef();
 
     // Leva controls
-    const { trailLength, actorSpeed, vSpan, uSpan, actorCount } = useControls({
-        trailLength: { value: 24, min: 0, max: 60, step: 1 },
+    const { actorSpeed, vSpan, uSpan, actorCount } = useControls({
         actorSpeed: { value: 0.1, min: 0, max: 0.5, step: 0.01 },
         vSpan: { value: 5, min: 1, max: 40, step: 1 },
         uSpan: { value: 15, min: 1, max: 40, step: 1 },
@@ -65,15 +64,6 @@ function Scene() {
         return { locationList: points, edges };
     }, [R, r, vSpan, uSpan]);
 
-    const geometry = useMemo(() => {
-        const geom = new BufferGeometry();
-        geom.setAttribute(
-            "position",
-            new Float32BufferAttribute(locationList.flat(), 3)
-        );
-        return geom;
-    }, [locationList]);
-
     useFrame(({ clock }) => {
         const elapsedTime = clock.getElapsedTime();
         if (groupRef.current) {
@@ -87,16 +77,6 @@ function Scene() {
                 <ambientLight intensity={0.5} />
                 <pointLight position={[10, 10, 10]} />
 
-                {/* Mesh */}
-                {/* <mesh geometry={geometry}>
-                <meshStandardMaterial
-                    color="white"
-                    wireframe={true}
-                    opacity={0.0}
-                    transparent={true}
-                />
-            </mesh> */}
-
                 {/* Actors */}
                 {Array.from({ length: actorCount }).map((_, i) => (
                     <Actor
@@ -104,7 +84,6 @@ function Scene() {
                         locationList={locationList}
                         edges={edges}
                         speed={actorSpeed}
-                        trailLength={trailLength} // Pass trail length as a prop
                     />
                 ))}
             </group>
