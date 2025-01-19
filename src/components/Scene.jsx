@@ -88,7 +88,7 @@ function Scene() {
             </mesh> */}
 
             {/* Actors */}
-            {Array.from({ length: 500 }).map((_, i) => (
+            {Array.from({ length: 1000 }).map((_, i) => (
                 <Actor
                     key={i}
                     locationList={locationList}
