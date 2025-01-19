@@ -59,7 +59,7 @@ function InfinityTube({
     scaleX = 1,
     scaleY = 1,
     scaleZ = 0.5,
-    distortionStrength = 1,
+    overallDistortion = 0,
 }) {
     const curve = React.useMemo(() => {
         class InfinityCurve extends THREE.Curve {
@@ -69,27 +69,39 @@ function InfinityTube({
                 this.scaleX = scaleX;
                 this.scaleY = scaleY;
                 this.scaleZ = scaleZ;
-                this.distortionStrength = distortionStrength;
+                this.overallDistortion = overallDistortion;
             }
 
             getPoint(t) {
                 const angle = t * Math.PI * 2;
 
                 // Original infinity shape
-                const x = this.a * Math.sin(angle) * this.scaleX;
+                const x = this.a * -Math.sin(angle) * this.scaleX;
                 const y =
                     this.a * Math.sin(angle) * Math.cos(angle) * this.scaleY;
                 const z = this.a * Math.cos(angle) * this.scaleZ;
 
-                // Distortion function: scale parts of the curve symmetrically
-                const distortion =
-                    1 + this.distortionStrength * Math.sin(angle * 2);
-                return new THREE.Vector3(x * distortion, y, z);
+                // Determine distortion scale for the current region
+                let horizontalDistortion = 1;
+                let verticalDistortion = 1;
+
+                // Apply overall distortion
+                const h_distortion =
+                    1 + this.overallDistortion * Math.sin(angle * 2);
+
+                const v_distortion =
+                    1 + this.overallDistortion * -Math.cos(angle * 2) * 0.25;
+
+                return new THREE.Vector3(
+                    x * h_distortion * horizontalDistortion,
+                    y * v_distortion * verticalDistortion,
+                    z
+                );
             }
         }
 
         return new InfinityCurve();
-    }, [a, scaleX, scaleY, scaleZ, distortionStrength]);
+    }, [a, scaleX, scaleY, scaleZ, overallDistortion]);
 
     const geometry = React.useMemo(() => {
         const tubeGeometry = new THREE.TubeGeometry(
@@ -120,10 +132,10 @@ function App() {
                 radius={0.3}
                 radialSegments={16}
                 a={4}
-                scaleX={1}
+                scaleX={0.8}
                 scaleY={1}
                 scaleZ={0.1}
-                distortionStrength={0.2} // Adjust this to change distortion intensity
+                overallDistortion={0.275} // Global distortion intensity
             />
         </Canvas>
     );
