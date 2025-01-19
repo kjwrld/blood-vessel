@@ -2,20 +2,7 @@
 
 **R3F rework of @junkiyoshi Blood Vessel of Torus**
 
-<table border="0">
-  <tr>
-    <td valign="top" width="50%">
-Original
-![Junki Yoshi - Blood vessel of torus](https://github.com/user-attachments/assets/8fde38db-b1d0-45dd-ace2-072713c730bc)
-
-</td>
-    <td valign="top" width="50%">
-
 ![My Rework](https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExOTU2ZXl5cnpoZXF5aGJ6YWF5b28zYmxwazBjMnRiYTVmZ3cxdnYzaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/nvdtSVmWDhXg5GuNyh/giphy.gif)
-
-</td>
-  </tr>
-</table>
 
 
 Reworked from C++ (openFrameworks)
