@@ -1,21 +1,30 @@
-import React, { useMemo, useRef } from "react";
-import { BufferGeometry, Float32BufferAttribute } from "three";
-import { useFrame } from "@react-three/fiber";
+import React, { useRef, useMemo, useEffect } from "react";
+import { useFrame, extend, useThree } from "@react-three/fiber";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
+import { MotionBlurPass } from "../postprocessing/MotionBlurPass"; // Import your custom pass
 import Actor from "./Actor";
+import { BufferGeometry, Float32BufferAttribute } from "three";
 
-function Scene() {
+// Extend custom passes into React Three Fiber
+extend({ EffectComposer, RenderPass, MotionBlurPass });
+
+export default function Scene() {
+    const composer = useRef();
     const groupRef = useRef();
-    const R = 10; // Major radius
-    const r = 1.75; // Minor radius
-    const vSpan = 3; // Reduce for finer vertical resolution
-    const uSpan = 15; // Reduce for finer horizontal resolution
+    const { scene, camera, gl, size } = useThree(); // Access Fiber's context
 
-    // Generate location points and edges for the mesh
+    const R = 10;
+    const r = 1.75;
+    const vSpan = 3;
+    const uSpan = 15;
+
+    // Generate location points and edges
     const { locationList, edges } = useMemo(() => {
         const points = [];
-        const edgesSet = new Set(); // Use a set to avoid duplicate edges
-        const uSteps = Math.ceil(360 / uSpan); // Total horizontal face divisions
-        const vSteps = Math.ceil((360 * 1.5) / vSpan); // Total vertical face divisions
+        const edgesSet = new Set();
+        const uSteps = Math.ceil(360 / uSpan);
+        const vSteps = Math.ceil((360 * 1.5) / vSpan);
 
         for (let v = 0; v <= 360 * 1.5; v += vSpan) {
             const z = (v / (360 * 1.5)) * 20 - 10;
@@ -31,15 +40,13 @@ function Scene() {
             }
         }
 
-        // Generate edges from the faces
         for (let v = 0; v < vSteps; v++) {
             for (let u = 0; u < uSteps; u++) {
                 const a = v * uSteps + u;
-                const b = v * uSteps + ((u + 1) % uSteps); // Wrap horizontally
+                const b = v * uSteps + ((u + 1) % uSteps);
                 const c = (v + 1) * uSteps + u;
-                const d = (v + 1) * uSteps + ((u + 1) % uSteps); // Wrap horizontally
+                const d = (v + 1) * uSteps + ((u + 1) % uSteps);
 
-                // Add edges as sorted pairs to avoid duplicates
                 [
                     [a, b],
                     [a, c],
@@ -65,10 +72,37 @@ function Scene() {
         return geom;
     }, [locationList]);
 
+    // Initialize EffectComposer and passes
+    useEffect(() => {
+        const effectComposer = new EffectComposer(gl);
+        const renderPassInstance = new RenderPass(scene, camera);
+
+        // Try initializing MotionBlurPass with default values
+        let motionBlurPassInstance;
+        try {
+            motionBlurPassInstance = new MotionBlurPass(scene, camera, {
+                samples: 30,
+                smearIntensity: 1,
+            });
+            effectComposer.addPass(motionBlurPassInstance);
+        } catch (error) {
+            console.error("MotionBlurPass initialization error:", error);
+        }
+
+        effectComposer.addPass(renderPassInstance);
+
+        composer.current = effectComposer;
+    }, [scene, camera, gl]);
+
+    // Use EffectComposer for rendering
+    useFrame(() => {
+        if (composer.current) composer.current.render();
+    });
+
     useFrame(({ clock }) => {
         const elapsedTime = clock.getElapsedTime();
         if (groupRef.current) {
-            groupRef.current.rotation.z = elapsedTime * 0.1;
+            groupRef.current.rotation.z = elapsedTime * 1;
         }
     });
 
@@ -77,15 +111,14 @@ function Scene() {
             <ambientLight intensity={0.5} />
             <pointLight position={[10, 10, 10]} />
 
-            {/* Mesh */}
-            {/* <mesh geometry={geometry}>
+            <mesh geometry={geometry}>
                 <meshStandardMaterial
                     color="white"
-                    wireframe={true}
+                    wireframe={true} // Visible wireframe
                     opacity={0.0}
                     transparent={true}
                 />
-            </mesh> */}
+            </mesh>
 
             {/* Actors */}
             {Array.from({ length: 500 }).map((_, i) => (
@@ -99,5 +132,3 @@ function Scene() {
         </group>
     );
 }
-
-export default Scene;
