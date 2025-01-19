@@ -1,14 +1,23 @@
 import React, { useMemo, useRef } from "react";
 import { BufferGeometry, Float32BufferAttribute } from "three";
 import { useFrame } from "@react-three/fiber";
+import { useControls } from "leva"; // Import Leva
 import Actor from "./Actor";
 
 function Scene() {
     const groupRef = useRef();
+
+    // Leva controls
+    const { trailLength, actorSpeed, vSpan, uSpan, actorCount } = useControls({
+        trailLength: { value: 24, min: 0, max: 60, step: 1 },
+        actorSpeed: { value: 0.1, min: 0, max: 0.5, step: 0.01 },
+        vSpan: { value: 5, min: 1, max: 40, step: 1 },
+        uSpan: { value: 15, min: 1, max: 40, step: 1 },
+        actorCount: { value: 500, min: 0, max: 750, step: 1 },
+    });
+
     const R = 10; // Major radius
     const r = 1.75; // Minor radius
-    const vSpan = 3; // Reduce for finer vertical resolution
-    const uSpan = 15; // Reduce for finer horizontal resolution
 
     // Generate location points and edges for the mesh
     const { locationList, edges } = useMemo(() => {
@@ -89,12 +98,13 @@ function Scene() {
             </mesh> */}
 
                 {/* Actors */}
-                {Array.from({ length: 1000 }).map((_, i) => (
+                {Array.from({ length: actorCount }).map((_, i) => (
                     <Actor
                         key={i}
                         locationList={locationList}
                         edges={edges}
-                        speed={0.1}
+                        speed={actorSpeed}
+                        trailLength={trailLength} // Pass trail length as a prop
                     />
                 ))}
             </group>

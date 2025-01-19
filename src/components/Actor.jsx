@@ -57,7 +57,7 @@ function Actor({ locationList, edges, speed = 0.05 }) {
                 trail.flatMap((_, i) => {
                     const t = i / (trail.length - 1); // Normalize index (0 to 1)
                     const alpha = 1 - t; // Lower alpha as t increases (closer to the end)
-                    return [0.3, 0.3, 0.7, alpha]; // RGBA: Color with varying alpha
+                    return [0.2, 0.2, 0.6, alpha]; // RGBA: Color with varying alpha
                 })
             );
 
