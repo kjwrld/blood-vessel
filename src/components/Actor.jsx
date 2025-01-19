@@ -5,7 +5,7 @@ import * as THREE from "three";
 function Actor({ locationList, edges, speed = 0.05 }) {
     const trailRef = useRef();
 
-    const MAX_TRAIL_LENGTH = 24;
+    const MAX_TRAIL_LENGTH = 48;
 
     const state = useRef({
         selectIndex: Math.floor(Math.random() * locationList.length),
@@ -56,7 +56,7 @@ function Actor({ locationList, edges, speed = 0.05 }) {
                 trail.flatMap((_, i) => {
                     const t = i / (trail.length - 1); // Normalize index
                     const alpha = t; // Higher t => more transparency
-                    return [0.3, 0.3, 1, alpha]; // White with varying alpha
+                    return [0.3, 0.3, 0.7, alpha]; // White with varying alpha
                 })
             );
             if (!trailGeometry.attributes.color) {
