@@ -32,7 +32,7 @@ Torus-Based Path: Actors move across a calculated toroidal geometry, ensuring cy
 git clone <your-repo-link>
 cd <your-repo-folder>
 npm install
-npm start
+npm run dev
 ```
 
 Open your browser and navigate to http://localhost:3000
