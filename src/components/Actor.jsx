@@ -52,17 +52,19 @@ function Actor({ locationList, edges, speed = 0.05 }) {
             }
 
             // Update colors with gradient opacity
+            // Update colors with gradient opacity
             const colors = new Float32Array(
                 trail.flatMap((_, i) => {
-                    const t = i / (trail.length - 1); // Normalize index
-                    const alpha = t; // Higher t => more transparency
-                    return [0.3, 0.3, 0.7, alpha]; // White with varying alpha
+                    const t = i / (trail.length - 1); // Normalize index (0 to 1)
+                    const alpha = 1 - t; // Lower alpha as t increases (closer to the end)
+                    return [0.3, 0.3, 0.7, alpha]; // RGBA: Color with varying alpha
                 })
             );
+
             if (!trailGeometry.attributes.color) {
                 trailGeometry.setAttribute(
                     "color",
-                    new THREE.BufferAttribute(colors, 4) // RGBA
+                    new THREE.BufferAttribute(colors, 4) // RGBA format
                 );
             } else {
                 trailGeometry.attributes.color.array = colors;

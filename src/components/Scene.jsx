@@ -73,12 +73,13 @@ function Scene() {
     });
 
     return (
-        <group ref={groupRef}>
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} />
+        <>
+            <group ref={groupRef}>
+                <ambientLight intensity={0.5} />
+                <pointLight position={[10, 10, 10]} />
 
-            {/* Mesh */}
-            {/* <mesh geometry={geometry}>
+                {/* Mesh */}
+                {/* <mesh geometry={geometry}>
                 <meshStandardMaterial
                     color="white"
                     wireframe={true}
@@ -87,16 +88,17 @@ function Scene() {
                 />
             </mesh> */}
 
-            {/* Actors */}
-            {Array.from({ length: 500 }).map((_, i) => (
-                <Actor
-                    key={i}
-                    locationList={locationList}
-                    edges={edges}
-                    speed={0.1}
-                />
-            ))}
-        </group>
+                {/* Actors */}
+                {Array.from({ length: 1000 }).map((_, i) => (
+                    <Actor
+                        key={i}
+                        locationList={locationList}
+                        edges={edges}
+                        speed={0.1}
+                    />
+                ))}
+            </group>
+        </>
     );
 }
 
