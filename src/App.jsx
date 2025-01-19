@@ -46,76 +46,84 @@
 
 // export default App;
 
-import React, { useMemo } from "react";
+import React from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
-function InfinityTubular({
-    tubularSegments = 100,
-    radius = 0.2,
-    radialSegments = 8,
+function InfinityTube({
+    tubularSegments = 200,
+    radius = 0.3,
+    radialSegments = 16,
     a = 3,
     scaleX = 1,
     scaleY = 1,
-    scaleZ = 1,
+    scaleZ = 0.5,
+    distortionStrength = 1,
 }) {
-    const geometry = useMemo(() => {
-        // Custom curve for the Möbius infinity symbol
+    const curve = React.useMemo(() => {
         class InfinityCurve extends THREE.Curve {
+            constructor() {
+                super();
+                this.a = a;
+                this.scaleX = scaleX;
+                this.scaleY = scaleY;
+                this.scaleZ = scaleZ;
+                this.distortionStrength = distortionStrength;
+            }
+
             getPoint(t) {
-                const angle = t * 2 * Math.PI;
+                const angle = t * Math.PI * 2;
 
-                // Infinity shape equation with scaling
-                const x =
-                    ((a * Math.cos(angle)) / (1 + Math.sin(angle) ** 2)) *
-                    scaleX;
+                // Original infinity shape
+                const x = this.a * Math.sin(angle) * this.scaleX;
                 const y =
-                    ((a * Math.sin(angle) * Math.cos(angle)) /
-                        (1 + Math.sin(angle) ** 2)) *
-                    scaleY;
-                const z = Math.sin(angle) * scaleZ; // Add slight variation for depth
+                    this.a * Math.sin(angle) * Math.cos(angle) * this.scaleY;
+                const z = this.a * Math.cos(angle) * this.scaleZ;
 
-                return new THREE.Vector3(x, y, z);
+                // Distortion function: scale parts of the curve symmetrically
+                const distortion =
+                    1 + this.distortionStrength * Math.sin(angle * 2);
+                return new THREE.Vector3(x * distortion, y, z);
             }
         }
 
-        const path = new InfinityCurve();
-        return new THREE.TubeGeometry(
-            path,
+        return new InfinityCurve();
+    }, [a, scaleX, scaleY, scaleZ, distortionStrength]);
+
+    const geometry = React.useMemo(() => {
+        const tubeGeometry = new THREE.TubeGeometry(
+            curve,
             tubularSegments,
             radius,
             radialSegments,
             true
         );
-    }, [tubularSegments, radius, radialSegments, a, scaleX, scaleY, scaleZ]);
+        return tubeGeometry;
+    }, [curve, tubularSegments, radius, radialSegments]);
 
     return (
         <mesh geometry={geometry}>
-            <meshStandardMaterial
-                color="hotpink"
-                metalness={0.5}
-                roughness={0.4}
-                side={THREE.DoubleSide}
-            />
+            <meshStandardMaterial color="cyan" wireframe={false} />
         </mesh>
     );
 }
 
 function App() {
     return (
-        <Canvas camera={{ position: [0, 0, 20], fov: 75 }}>
+        <Canvas camera={{ position: [0, 0, 10], fov: 75 }}>
             <OrbitControls />
-            <ambientLight intensity={1} />
-            <pointLight position={[0, 0, 20]} />
-            <InfinityTubular
+            <ambientLight intensity={0.5} />
+            <pointLight position={[10, 10, 10]} />
+            <InfinityTube
                 tubularSegments={200}
                 radius={0.3}
                 radialSegments={16}
-                a={3}
+                a={4}
                 scaleX={1}
-                scaleY={2}
-                scaleZ={0.5}
+                scaleY={1}
+                scaleZ={0.1}
+                distortionStrength={0.2} // Adjust this to change distortion intensity
             />
         </Canvas>
     );
