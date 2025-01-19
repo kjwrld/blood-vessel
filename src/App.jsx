@@ -59,7 +59,8 @@ function InfinityTube({
     scaleX = 1,
     scaleY = 1,
     scaleZ = 0.5,
-    overallDistortion = 0,
+    overallDistortion = 0.275,
+    inflectionAdjustment = 0, // New parameter for inflection point adjustment
 }) {
     const curve = React.useMemo(() => {
         class InfinityCurve extends THREE.Curve {
@@ -70,6 +71,7 @@ function InfinityTube({
                 this.scaleY = scaleY;
                 this.scaleZ = scaleZ;
                 this.overallDistortion = overallDistortion;
+                this.inflectionAdjustment = inflectionAdjustment;
             }
 
             getPoint(t) {
@@ -77,31 +79,23 @@ function InfinityTube({
 
                 // Original infinity shape
                 const x = this.a * -Math.sin(angle) * this.scaleX;
-                const y =
+                let y =
                     this.a * Math.sin(angle) * Math.cos(angle) * this.scaleY;
                 const z = this.a * Math.cos(angle) * this.scaleZ;
 
-                // Determine distortion scale for the current region
-                let horizontalDistortion = 1;
-                let verticalDistortion = 1;
-
                 // Apply overall distortion
-                const h_distortion =
+                const distortion =
                     1 + this.overallDistortion * Math.sin(angle * 2);
 
-                const v_distortion =
-                    1 + this.overallDistortion * -Math.cos(angle * 2) * 0.25;
+                // Adjust for inflection point
+                y += this.inflectionAdjustment * Math.sin(angle * 2);
 
-                return new THREE.Vector3(
-                    x * h_distortion * horizontalDistortion,
-                    y * v_distortion * verticalDistortion,
-                    z
-                );
+                return new THREE.Vector3(x * distortion, y * distortion, z);
             }
         }
 
         return new InfinityCurve();
-    }, [a, scaleX, scaleY, scaleZ, overallDistortion]);
+    }, [a, scaleX, scaleY, scaleZ, overallDistortion, inflectionAdjustment]);
 
     const geometry = React.useMemo(() => {
         const tubeGeometry = new THREE.TubeGeometry(
@@ -129,13 +123,14 @@ function App() {
             <pointLight position={[10, 10, 10]} />
             <InfinityTube
                 tubularSegments={200}
-                radius={0.3}
+                radius={0.4}
                 radialSegments={16}
                 a={4}
-                scaleX={0.8}
+                scaleX={0.7}
                 scaleY={1}
                 scaleZ={0.1}
-                overallDistortion={0.275} // Global distortion intensity
+                overallDistortion={0.35} // Global distortion intensity
+                inflectionAdjustment={0.0} // Adjust the midpoint height
             />
         </Canvas>
     );
