@@ -1,28 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import InfinityTube from "./InfinityTube";
 import Actor from "./Actor";
 
 function Scene() {
     const [vertices, setVertices] = useState([]);
-    // const [faces, setFaces] = useState([]);
     const [edges, setEdges] = useState([]);
+    const timeRef = useRef(1);
 
-    const handleGenerateData = (vertices, faces, edges) => {
-        setVertices(vertices);
-        // setFaces(faces);
-        setEdges(edges);
-    };
+    useFrame((_, delta) => {
+        timeRef.current += delta * 0.5; // Adjust speed as necessary
+    });
 
     return (
         <group>
-            <InfinityTube onGenerateData={handleGenerateData} />
+            <InfinityTube
+                time={0} // Pass time to InfinityTube
+                onGenerateData={(v, e) => {
+                    setVertices(v);
+                    setEdges(e);
+                }}
+            />
             {edges.length > 0 &&
-                Array.from({ length: 300 }).map((_, i) => (
+                Array.from({ length: 500 }).map((_, i) => (
                     <Actor
                         key={i}
                         vertices={vertices}
                         edges={edges}
                         speed={0.1}
+                        time={timeRef.current} // Pass time to Actor
                     />
                 ))}
         </group>

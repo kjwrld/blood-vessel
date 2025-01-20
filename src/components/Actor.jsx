@@ -2,9 +2,9 @@ import React, { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-function Actor({ vertices, edges, speed = 0.02 }) {
+function Actor({ vertices, edges, speed = 0.02, time = 0 }) {
     const trailRef = useRef();
-    const MAX_TRAIL_LENGTH = 24;
+    const MAX_TRAIL_LENGTH = 48;
 
     const state = useRef({
         selectIndex: Math.floor(Math.random() * vertices.length),
@@ -18,11 +18,25 @@ function Actor({ vertices, edges, speed = 0.02 }) {
 
         if (!vertices[selectIndex] || !vertices[nextIndex]) return;
 
-        const start = vertices[selectIndex];
-        const end = vertices[nextIndex];
+        // Dynamically adjust vertex positions based on time
+        const updatedStart = new THREE.Vector3(
+            vertices[selectIndex].x + Math.sin(time) * 0.2,
+            vertices[selectIndex].y + Math.cos(time) * 0.2,
+            vertices[selectIndex].z + Math.sin(time * 0.5) * 0.2
+        );
+
+        const updatedEnd = new THREE.Vector3(
+            vertices[nextIndex].x + Math.sin(time) * 0.2,
+            vertices[nextIndex].y + Math.cos(time) * 0.2,
+            vertices[nextIndex].z + Math.sin(time * 0.5) * 0.2
+        );
 
         // Interpolate position
-        const position = new THREE.Vector3().lerpVectors(start, end, progress);
+        const position = new THREE.Vector3().lerpVectors(
+            updatedStart,
+            updatedEnd,
+            progress
+        );
 
         // Update trail
         trail.push(position.clone());
@@ -59,7 +73,7 @@ function Actor({ vertices, edges, speed = 0.02 }) {
     return (
         <line>
             <bufferGeometry ref={trailRef} />
-            <lineBasicMaterial color="blue" />
+            <lineBasicMaterial color="black" />
         </line>
     );
 }

@@ -1,23 +1,20 @@
-import React, { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
 export default function InfinityTube({
-    tubularSegments = 200,
+    tubularSegments = 100,
     radius = 0.4,
     radialSegments = 16,
-    a = 4,
+    a = 5,
     scaleX = 0.75,
     scaleY = 1,
     scaleZ = 0.1,
-    overallDistortion = 0.35,
+    overallDistortion = 0.425,
     wireframe = false,
     visible = false,
-    speed = 0.01,
-    onGenerateData = () => {}, // Callback for vertices and faces
+    time = 0, // Time is now passed as a prop
+    onGenerateData = () => {}, // Callback for vertices and edges
 }) {
-    const tRef = useRef(0); // Animation progress
-
     const curve = useMemo(() => {
         class InfinityCurve extends THREE.Curve {
             constructor() {
@@ -32,26 +29,24 @@ export default function InfinityTube({
             getPoint(t) {
                 const angle = t * Math.PI * 2;
 
-                // Infinity shape equation with dynamic offset
-                const x = this.a * Math.sin(angle + tRef.current) * this.scaleX;
+                // Infinity shape equation with dynamic offset based on time
+                const x = this.a * Math.sin(angle + time) * this.scaleX;
                 const y =
                     this.a *
-                    Math.sin(angle + tRef.current) *
-                    Math.cos(angle + tRef.current) *
+                    Math.sin(angle + time) *
+                    Math.cos(angle + time) *
                     this.scaleY;
-                const z = this.a * Math.cos(angle + tRef.current) * this.scaleZ;
+                const z = this.a * Math.cos(angle + time) * this.scaleZ;
 
                 // Apply distortion
                 const distortion =
-                    1 +
-                    this.overallDistortion *
-                        Math.sin((angle + tRef.current) * 2);
+                    1 + this.overallDistortion * Math.sin((angle + time) * 2);
 
                 const v_distortion =
                     1 +
                     this.overallDistortion *
-                        -Math.cos((angle + tRef.current) * 2) *
-                        0.25;
+                        -Math.cos((angle + time) * 2) *
+                        1.25;
 
                 return new THREE.Vector3(
                     x * distortion,
@@ -62,7 +57,7 @@ export default function InfinityTube({
         }
 
         return new InfinityCurve();
-    }, [a, scaleX, scaleY, scaleZ, overallDistortion]);
+    }, [a, scaleX, scaleY, scaleZ, overallDistortion, time]);
 
     useEffect(() => {
         const tubeGeometry = new THREE.TubeGeometry(
@@ -75,7 +70,6 @@ export default function InfinityTube({
 
         const vertices = [];
         const edges = [];
-        const faces = [];
 
         const positionAttribute = tubeGeometry.attributes.position;
 
@@ -86,7 +80,7 @@ export default function InfinityTube({
             vertices.push(vertex);
         }
 
-        // Generate faces (two triangles per quad)
+        // Generate edges
         for (let j = 0; j < tubularSegments; j++) {
             for (let i = 0; i < radialSegments; i++) {
                 const a = i + j * (radialSegments + 1);
@@ -97,23 +91,12 @@ export default function InfinityTube({
                     ((i + 1) % (radialSegments + 1)) +
                     (j + 1) * (radialSegments + 1);
 
-                // Create two triangles per quad
-                faces.push([a, b, d]);
-                faces.push([a, d, c]);
-
-                // Store edge connections for actor movement
                 edges.push([a, b], [b, d], [d, c], [c, a]);
             }
         }
 
-        onGenerateData(vertices, faces, edges);
+        onGenerateData(vertices, edges);
     }, [curve, tubularSegments, radius, radialSegments, onGenerateData]);
-
-    useFrame(() => {
-        // Advance time and update the curve's points
-        tRef.current += speed;
-        // tRef.current %= 1; // Keep t within [0, 1] for looping
-    });
 
     return (
         <mesh visible={visible}>
